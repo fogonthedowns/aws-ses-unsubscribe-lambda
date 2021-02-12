@@ -34,7 +34,7 @@ func Init(x *Lambda) {
 func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	email := request.QueryStringParameters["email"]
 
-	if email == "" {
+	if email != "" {
 		err := x.writeToS3(email)
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, err
@@ -43,7 +43,7 @@ func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProx
 		return events.APIGatewayProxyResponse{}, errors.New("email blank")
 	}
 
-	message := fmt.Sprintf("%s succesfully unsubscribed", email)
+	message := fmt.Sprintf("%v succesfully unsubscribed", email)
 	resp := &response{
 		Msg: message,
 	}
