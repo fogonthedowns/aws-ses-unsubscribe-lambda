@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -16,7 +16,7 @@ import (
 )
 
 type response struct {
-	UTC time.Time `json:"utc"`
+	Msg string `json:"email"`
 }
 
 type Lambda struct {
@@ -31,16 +31,23 @@ func Init(x *Lambda) {
 	x.Session = sess
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	email := request.QueryStringParameters['email']
-	
+func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	email := request.QueryStringParameters["email"]
+
 	if email != "" {
-	
+		err := x.writeToS3(email)
+		if err != nil {
+			return events.APIGatewayProxyResponse{}, err
+		}
+	} else {
+		return events.APIGatewayProxyResponse{}, errors.New("email blank")
 	}
 
+	message := fmt.Sprintf("%s succesfully unsubscribed", email)
 	resp := &response{
-		UTC: now.UTC(),
+		Msg: message,
 	}
+
 	body, err := json.Marshal(resp)
 	if err != nil {
 		return events.APIGatewayProxyResponse{}, err
@@ -70,8 +77,4 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 	}
 
 	return nil
-}
-
-func main() {
-	lambda.Start(handleRequest)
 }
