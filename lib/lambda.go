@@ -34,7 +34,7 @@ func Init(x *Lambda) {
 func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	email := request.QueryStringParameters["email"]
 
-	if email != "" {
+	if email == "" {
 		err := x.writeToS3(email)
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, err
