@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/google/uuid"
 )
 
 type response struct {
@@ -59,7 +59,13 @@ func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProx
 func (x Lambda) writeToS3(emailAddress string) (err error) {
 	uploader := s3manager.NewUploader(x.Session)
 	currentTime := time.Now()
-	id := uuid.New()
+
+	sd, err := base64.StdEncoding.DecodeString(emailAddress)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	id := string(sd)
 
 	bucketPrefix := fmt.Sprintf(
 		"%s/%s/",
@@ -68,7 +74,7 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketPrefix),
-		Key:    aws.String(id.String()),
+		Key:    aws.String(id),
 		Body:   bytes.NewReader([]byte(emailAddress)),
 	})
 
