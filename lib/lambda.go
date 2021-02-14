@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 )
 
 type response struct {
@@ -62,10 +63,11 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 
 	sd, err := base64.StdEncoding.DecodeString(emailAddress)
 	if err != nil {
+		fmt.Printf("error in decode %v\n", err)
 		fmt.Println(err)
 	}
 
-	id := string(sd)
+	id := uuid.New()
 
 	bucketPrefix := fmt.Sprintf(
 		"%s/%s/",
@@ -74,8 +76,8 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketPrefix),
-		Key:    aws.String(id),
-		Body:   bytes.NewReader([]byte(emailAddress)),
+		Key:    aws.String(id.String()),
+		Body:   bytes.NewReader([]byte(sd)),
 	})
 
 	if err != nil {
