@@ -35,8 +35,17 @@ func Init(x *Lambda) {
 func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	email := request.QueryStringParameters["email"]
 
+	var unencodedEmail string
+
 	if email != "" {
-		err := x.writeToS3(email)
+
+		sd, err := base64.StdEncoding.DecodeString(email)
+		if err != nil {
+			fmt.Printf("error in decode %v\n", err)
+			fmt.Println(err)
+		}
+		unencodedEmail = string(sd)
+		err := x.writeToS3(unencodedEmail)
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, err
 		}
@@ -44,7 +53,7 @@ func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProx
 		return events.APIGatewayProxyResponse{}, errors.New("email blank")
 	}
 
-	message := fmt.Sprintf("%v succesfully unsubscribed", email)
+	message := fmt.Sprintf("%v succesfully unsubscribed", unencodedEmail)
 	resp := &response{
 		Msg: message,
 	}
@@ -61,12 +70,6 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 	uploader := s3manager.NewUploader(x.Session)
 	currentTime := time.Now()
 
-	sd, err := base64.StdEncoding.DecodeString(emailAddress)
-	if err != nil {
-		fmt.Printf("error in decode %v\n", err)
-		fmt.Println(err)
-	}
-
 	id := uuid.New()
 
 	bucketPrefix := fmt.Sprintf(
@@ -77,7 +80,7 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketPrefix),
 		Key:    aws.String(id.String()),
-		Body:   bytes.NewReader([]byte(sd)),
+		Body:   bytes.NewReader([]byte(emailAddress)),
 	})
 
 	if err != nil {
