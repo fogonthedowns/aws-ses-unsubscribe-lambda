@@ -45,7 +45,7 @@ func (x Lambda) HandleRequest(ctx context.Context, request events.APIGatewayProx
 			fmt.Println(err)
 		}
 		unencodedEmail = string(sd)
-		err := x.writeToS3(unencodedEmail)
+		err = x.writeToS3(unencodedEmail)
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, err
 		}
