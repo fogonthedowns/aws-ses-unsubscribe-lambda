@@ -81,8 +81,6 @@ func (x Lambda) writeToS3(emailAddress string) (err error) {
 	})
 
 	if err != nil {
-		fmt.Printf("error with %v\n", id)
-		fmt.Printf("error with %v\n", aws.String(id))
 		return err
 	}
 
